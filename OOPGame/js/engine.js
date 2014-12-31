@@ -14,6 +14,14 @@
  * a little simpler to work with.
  */
 
+/* 
+    Rob Kotenko: I want to be able to store some details about the board that is 
+    accessible globally.  These will allow me to not have to hardcode pixels and columns
+    all over the place.
+*/
+
+var Board = {};
+
 var Engine = (function(global) {
     /* Predefine the variables we'll be using within this scope,
      * create the canvas element, grab the 2D context for that canvas
@@ -25,8 +33,8 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime;
 
-    canvas.width = 505;
-    canvas.height = 606;
+    Board.width = canvas.width = 505;
+    Board.height = canvas.height = 606;
     doc.body.appendChild(canvas);
 
     /* This function serves as the kickoff point for the game loop itself
@@ -181,4 +189,5 @@ var Engine = (function(global) {
      * from within their app.js files.
      */
     global.ctx = ctx;
+    //global.Engine = this;
 })(this);
