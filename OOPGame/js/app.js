@@ -1,3 +1,18 @@
+// Rob Kotenko: A superclass called character.  Every enemy and the player is a subclass of this
+// x: x coordinate
+// y: y coordinate
+// sprite: a url string for the character image
+var Character = function (x, y, sprite) {
+    this.x = x;
+    this.y = y;
+    this.sprite = sprite;   
+};
+
+// the render function looks the same for enemies and players so put it in character
+Character.prototype.render = function () {
+    
+};
+
 // Enemies our player must avoid
 var Enemy = function() {
     // Variables applied to each of our instances go here,
@@ -24,17 +39,19 @@ Enemy.prototype.render = function() {
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
-var Player = function() {};
-
+var Player = function() {
+    Character.call(this, Board.startLocation[0], Board.startLocation[1], 'images/char-boy.png');
+};
+Player.prototype = Object.create(Character.prototype);
+Player.prototype.constructor = Player;
 Player.prototype.update = function() {};
-Player.prototype.render = function() {};
 Player.prototype.handleInput = function() {};
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
-allEnemies = [];
-player = new Player();
+var allEnemies = [];
+var player = new Player();
 
 
 // This listens for key presses and sends the keys to your
