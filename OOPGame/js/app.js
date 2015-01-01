@@ -10,7 +10,7 @@ var Character = function (x, y, sprite) {
 
 // the render function looks the same for enemies and players so put it in character
 Character.prototype.render = function () {
-    
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);    
 };
 
 // Enemies our player must avoid
@@ -29,23 +29,53 @@ Enemy.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
     // all computers.
-}
-
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-}
+};
 
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
 var Player = function() {
-    Character.call(this, Board.startLocation[0], Board.startLocation[1], 'images/char-boy.png');
+    Character.call(this, Board.startLocation.column, Board.startLocation.row, 'images/char-boy.png');
 };
+
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
-Player.prototype.update = function() {};
-Player.prototype.handleInput = function() {};
+Player.prototype.update = function() {
+};
+Player.prototype.handleInput = function(direction) {
+    var callUpdate = false;
+    switch(direction) {
+        case 'left':
+            if(player.x > 0) {
+                player.x = player.x - Board.columnSize;
+                callUpdate = true;    
+            }
+            break;
+        case 'right':
+            if(player.x < Board.columnSize * Board.numberOfRows) {
+                player.x = player.x + Board.columnSize;
+                callUpdate = true;
+            }
+            break;
+    }
+    
+    if(callUpdate) {
+        player.update();
+    }
+};
+
+// Rob Kotenko: determinePixels takes a type, row or column and converts the simple number
+// to the proper number of pixels for where the player sprite should be drawn
+// a helper function really so I can think in column and row numbers instead of pixels
+// and I can store the sizes for each in Board
+Player.prototype.determinePixels = function (type, value) {
+    switch(type) {
+        case 'row':
+            return value * Board.rowSize;
+        case 'column':
+            return value * Board.columnSize;
+    }
+};
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
