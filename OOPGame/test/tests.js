@@ -69,38 +69,66 @@ describe('Player class', function () {
 		it('the y property should be set to ' + Board.startLocation.row, function () {
 			expect(player.y).to.equal(Board.startLocation.row);
 		});
+		
+		it('player.reset() should put the player character back to the startLocation values', function () {
+			// move the player off of the startLocation for testing.  start is (2, 5)
+			player.x = Board.columnSize * 3;
+			player.y = Board.rowSize * 3;
+			player.reset();
+			expect(player.x).to.equal(Board.startLocation.column);
+			expect(player.y).to.equal(Board.startLocation.row);
+		});
 	});
 	
 	describe('handleInput outcomes', function () {
-		var updateSpy;
-		updateSpy = sinon.spy(player, 'update'); 
 		
-		beforeEach(function () {
-			updateSpy.reset();
-		});
-		
-		it('player.update not called when left is clicked and player.x is 0', function () {
+		it('Left Boundary: x stays same', function () {
 			player.x = 0;
 			player.handleInput('left');
-			expect(updateSpy).not.called;
+			expect(player.x).to.equal(0);
 		});
 
-		it('player.update called when left is clicked and player.x > 0', function () {
-			player.x = player.determinePixels('column', 1); 
+		it('Left input when not at boundary: move one column left so player.x =  player.x - ' + Board.columnSize, function () {
+			var original = player.x = Board.columnSize; // puts player in second column 
 			player.handleInput('left');
-			expect(updateSpy).be.called;
+			expect(player.x + Board.columnSize).to.equal(original);
 		});
 
-		it('player.update not called when right is clicked and player.x is in far right column', function () {
-			player.x = player.determinePixels('column', Board.numberOfRows);  // puts the character in far right column
+		it('Right Boundary: x stays the same', function () {
+			var original = player.x = Board.columnSize * (Board.numberOfColumns - 1);  // puts the character in far right column
 			player.handleInput('right');
-			expect(updateSpy).not.called;
+			expect(player.x).to.equal(original);
 		});
 
-		it('player.update called when right is clicked and player.x < far right column', function () {
-			player.x = player.determinePixels('column', 1);
+		it('Right input when not at boundary: move one column right so player.x is player.x + . ' + Board.columnSize, function () {
+			var original = player.x = Board.columnSize; // puts player in second column 
 			player.handleInput('right');
-			expect(updateSpy).be.called;
+			expect(original).to.equal(player.x - Board.columnSize);
+		});
+
+		it('Top Boundary: player made it to row 1 (right before water) and tries to move up, y and x are reset to start', function () {
+			player.y = Board.rowSize * 1;
+			player.handleInput('up');
+			expect(player.x).to.equal(Board.startLocation.column);
+			expect(player.y).to.equal(Board.startLocation.row);
+		});
+
+		it('Up input when not at boundary: move one row up so player.y = player.y - ' + Board.rowSize, function () {
+			var original = player.y = Board.rowSize * 4; // puts player in 5th row 
+			player.handleInput('up');
+			expect(player.y + Board.rowSize).to.equal(original);
+		});
+
+		it('Bottom Boundary: y does not change', function () {
+			var original = player.y = Board.rowSize * (Board.numberOfRows - 1); 
+			player.handleInput('down');
+			expect(player.y).to.equal(original);
+		});
+
+		it('Down input when not at boundary: move one row down so player.y = player.y + ' + Board.rowSize, function () {
+			var original = player.y = Board.rowSize * 1; // puts player in 1st row 
+			player.handleInput('down');
+			expect(player.y - Board.rowSize).to.equal(original);
 		});
 	});
-})
+});

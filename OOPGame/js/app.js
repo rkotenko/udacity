@@ -40,28 +40,41 @@ var Player = function() {
 
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
-Player.prototype.update = function() {
+
+// Rob Kotenko: reset the x and y of the player back to startLocation
+Player.prototype.reset = function () {  
+    player.x = Board.startLocation.column;
+    player.y = Board.startLocation.row;
 };
+
+// Converts the user input into the proper x and y values
 Player.prototype.handleInput = function(direction) {
-    var callUpdate = false;
     switch(direction) {
         case 'left':
             if(player.x > 0) {
                 player.x = player.x - Board.columnSize;
-                callUpdate = true;    
             }
             break;
         case 'right':
-            if(player.x < Board.columnSize * Board.numberOfRows) {
+            if(player.x < Board.columnSize * (Board.numberOfColumns - 1)) {
                 player.x = player.x + Board.columnSize;
-                callUpdate = true;
+            }
+            break;
+        case 'up':
+            // player is in 2nd row, right before water.  And up key is a win.  reset
+            if(player.y == Board.rowSize * 1) {
+                player.reset();
+            } else {
+                player.y = player.y - Board.rowSize;
+            }
+            break;
+        case 'down':
+            if(player.y < (Board.rowSize * (Board.numberOfRows - 1))) {
+                player.y = player.y + Board.rowSize;
             }
             break;
     }
     
-    if(callUpdate) {
-        player.update();
-    }
 };
 
 // Rob Kotenko: determinePixels takes a type, row or column and converts the simple number
