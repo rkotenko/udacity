@@ -10,13 +10,17 @@ var Board = {
     numberOfRows: 6,
     numberOfColumns: 5,
     columnSize: 101,
-    rowSize: 83
+    rowSize: 83,
+    rowBuffer: 20, 
+    minEnemySpeed: 75,
+    maxEnemySpeed: 300
 };
 
-// just doing things like this as I can more easily visual column and row counts instead of pixels
+// 
 Board.startLocation = {
     column: 2 * Board.columnSize, 
     row: 5 * Board.rowSize
 };
 
+// the rows needs to be a little less than rowSize otherwise the enemies scroll across row boundaries
 Board.enemyRows = [1 * Board.rowSize, 2 * Board.rowSize, 3 * Board.rowSize];

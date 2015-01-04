@@ -25,12 +25,20 @@ describe('Board class', function () {
 		it('should have a rowSize property', function () {
 			expect(Board.rowSize).to.exist;
 		});
+		
+		it('should have a minEnemySpeed property', function () {
+			expect(Board.minEnemySpeed).to.exist;
+		});
+		it('should have a maxEnemySpeed property', function () {
+			expect(Board.maxEnemySpeed).to.exist;
+		});
 		it('should have a enemyRows array', function () {
 			expect(Board.enemyRows).to.be.an.array;
 		});
 		it('should have a startLocation array', function () {
 			expect(Board.startLocation).to.be.an.array;
 		});
+		
 	})
 });
 
@@ -52,6 +60,10 @@ describe('Character class', function () {
 	
 	it('render method should exist', function () {
 		expect(character.render).to.exist;
+	});
+
+	it('randomInt method should exist', function () {
+		expect(character.randomInt).to.exist;
 	});
 });
 
@@ -130,5 +142,105 @@ describe('Player class', function () {
 			player.handleInput('down');
 			expect(player.y - Board.rowSize).to.equal(original);
 		});
+	});
+});
+
+describe('Enemy class', function () {
+	var enemy = new Enemy();
+	
+	it('setStartLocation should exist', function () {
+		expect(enemy.setStartLocation).to.exist();	
+	});
+
+	it('setSpeed should exist', function () {
+		expect(enemy.setSpeed).to.exist();
+	});
+	
+	it('x and y should be numbers and sprite should be a string', function () {
+		expect(enemy.x).to.be.a('number');
+		expect(enemy.y).to.be.a('number');
+		expect(enemy.sprite).to.be.a('string');
+	});
+	
+	describe('Enemy initialization', function () {
+		
+		it('enemy should be an instance of Character', function () {
+			expect(enemy).to.be.instanceOf(Character);
+		});
+		
+		it('x and y values should be set', function () {
+			expect(enemy.x).to.exist();
+			expect(enemy.y).to.exist();	
+		});
+		
+		// enemy.speed is a random number between enemy.minEnemySpeed and enemy.maxEnemySpeed.  It is directly set
+		// by randomInt, which is a proven function, so just check that it is set.  A more rigorous check could run this
+		// tons of times to check that the numbers always fall in range, I suppose, to ensure the proper range was used.
+		it('enemy.speed should be set and greater than 0', function () {
+			expect(enemy.speed).to.exist();
+			expect(enemy.speed).to.greaterThan(0);
+		});
+		
+		describe('getStartLocation - returns location array [x, y]', function () {
+			// stub out the random function so I can just the functions that use it instead of worrying about it itself
+			var randomStub = sinon.stub(enemy, 'randomInt');
+			
+			// Test cases for the enemyRow array.  Not quite sure how to best test random functionality
+			// but testing that my location function returns the first and last array values is at least something 
+			it('when randomInt returns 0, y should be first value in Enemy.enemyRows', function () {
+				randomStub.returns(0);
+				enemy.setStartLocation(); // manually call setStartLocation so the stub is used
+				expect(randomStub).called;
+				expect(enemy.y).to.equal(Board.enemyRows[0]);
+			});
+
+			it('when randomInt returns Enemy.enemyRows.length - 1, y should be last value in Enemy.enemyRows', function () {
+				randomStub.returns(Board.enemyRows.length - 1);
+				enemy.setStartLocation(); // manually call setStartLocation so the stub is used
+				expect(randomStub).called;
+				expect(enemy.y).to.equal(Board.enemyRows[Board.enemyRows.length - 1]);
+			});
+			
+			// test that x is being set by randomInt 
+			it('enemy.x should be set via randomInt. Test with -2 * Board.columnSize', function () {
+				randomStub.returns(-2 * Board.columnSize);
+				enemy.setStartLocation();
+				expect(randomStub).called;
+				expect(enemy.x).to.equal(-2 * Board.columnSize);
+			});
+		});
+		
+	});
+
+	describe('update', function () {
+		var startSpy = sinon.spy(enemy, 'setStartLocation'),
+			speedSpy = sinon.spy(enemy, 'setSpeed'),
+			dt = .035; // set the time delta (usually set by Date.now) to constant value
+		
+		beforeEach(function () {
+			startSpy.reset();
+			speedSpy.reset();	
+		});
+		
+		it('if enemy.x = Board.width, setStartLocation and setSpeed should be called', function () {
+			enemy.x = Board.width;
+			enemy.update(dt);
+			expect(startSpy).called;
+			expect(speedSpy).called;
+		});
+
+		it('if enemy.x > Board.width, setStartLocation and setSpeed should be called', function () {
+			enemy.x = Board.width + 1;
+			enemy.update(dt);
+			expect(startSpy).called;
+			expect(speedSpy).called;
+		});
+		
+		it('if enemy.x < Board.width, new enemy.x should be Math.floor(enemy.speed time time delta)', function () {
+			enemy.x = 0;
+			var expected = Math.floor(enemy.x + (enemy.speed * dt));
+			enemy.update(dt);
+			expect(enemy.x).to.equal(expected);
+		});	
 	});
 });

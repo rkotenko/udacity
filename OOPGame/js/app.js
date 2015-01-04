@@ -1,11 +1,14 @@
 // Rob Kotenko: A superclass called character.  Every enemy and the player is a subclass of this
-// x: x coordinate
-// y: y coordinate
-// sprite: a url string for the character image
-var Character = function (x, y, sprite) {
-    this.x = x;
-    this.y = y;
-    this.sprite = sprite;   
+// params can be an array of x, y, and sprite values or it can be just a sprite (x and y are set for enemies via
+// a special function in that class.  Code assumes length of 3 or 1 with correct values.  No validation
+var Character = function () {
+    if(arguments.length === 3) {
+        this.x = arguments[0];
+        this.y = arguments[1];
+        this.sprite = arguments[2];
+    } else {
+        this.sprite = arguments[0];
+    } 
 };
 
 // the render function looks the same for enemies and players so put it in character
@@ -13,33 +16,64 @@ Character.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);    
 };
 
+// Rob Kotenko: a random int function.  This is the standard function found in many locations on the web, including
+// MDN
+Character.prototype.randomInt = function (min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+};
+
 // Enemies our player must avoid
 var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
+    var location = this.setStartLocation();
+    Character.call(this, 'images/enemy-bug.png');
+    this.setSpeed();
+};
 
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
-    this.sprite = 'images/enemy-bug.png';
-}
+Enemy.prototype = Object.create(Character.prototype);
+Enemy.prototype.constructor = Enemy;
 
 // Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
+    // if position is past board width, reset the sprite
+    if(this.x >= Board.width) {
+        this.setSpeed();
+        this.setStartLocation()
+    } else {
+        this.x = Math.floor(this.x + (this.speed * dt));
+    }
+};
+
+// Rob Kotenko: method for computing the x and y values for an enemy
+// y: random choice of one of the values in the Board.enemyRows array
+// x: random value off map between column -2 and -1 inclusive 
+Enemy.prototype.setStartLocation = function () {
+    this.x = this.randomInt(-2 * Board.columnSize, -1 * Board.columnSize); // column -2 starts at -202, 1 starts at -101
+    this.y = Board.enemyRows[this.randomInt(0, Board.enemyRows.length)]; // get random int from range of enemyRow array
+    return location;    
+};
+
+// set the enemy speed to a random choice between minEnemySpeed and maxEnemySpeed
+Enemy.prototype.setSpeed = function () {
+    this.speed = this.randomInt(Board.minEnemySpeed, Board.maxEnemySpeed);
 };
 
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
 var Player = function() {
-    Character.call(this, Board.startLocation.column, Board.startLocation.row, 'images/char-boy.png');
+    Character.apply(this, [Board.startLocation.column, Board.startLocation.row, 'images/char-boy.png']);
 };
 
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
+
+// Check to see if the player has collided with an enemy.  Return true if so, false if not
+Player.prototype.hasCollided = function () {
+    // First, find all enemies in the array that are on the same row as player
+    // Then, with all resulting enemies, check if the enemy's left and right edges are within the players left and right
+    // edges. If so, collision has occurred, return true immediately
+};
 
 // Rob Kotenko: reset the x and y of the player back to startLocation
 Player.prototype.reset = function () {  
@@ -93,7 +127,7 @@ Player.prototype.determinePixels = function (type, value) {
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
-var allEnemies = [];
+var allEnemies = [new Enemy(), new Enemy(), new Enemy()];
 var player = new Player();
 
 
