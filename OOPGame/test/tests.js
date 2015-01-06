@@ -143,6 +143,40 @@ describe('Player class', function () {
 			expect(player.y - Board.rowSize).to.equal(original);
 		});
 	});
+	
+	describe('hasCollided - player sprite edges are inclusive', function () {
+		function test() {}
+		// use the player and the enemies already created to run tests
+		it('when player and enemies on different rows, hasCollided returns false', function () {
+			// reset the player.  This will it in the right place for this test
+			player.reset();
+			expect(player.hasCollided()).to.equal(false);
+		});
+
+		// test with two enemies to make sure multiple enemies in row is handled correctly
+		it('player, 2 enemies same row, no enemies inside player left and right edge, hasCollided should return false', function () {
+			// move first and last enemy to the 1st enemy row and 2nd column
+			var last = allEnemies.length - 1;
+			allEnemies[0].y = allEnemies[last].y = Board.enemyRows[0];
+			allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
+			
+			// move the player to the enemy row, in the 4th column
+			player.y = Board.enemyRows[0];
+			player.x = 3 * Board.columnSize;
+			expect(player.hasCollided()).to.equal(false);
+		});
+		
+		it('player, 2 enemies same row, 2nd enemy right edge = player left edge, hasCollided should return true', function () {
+			// move first and last enemy to the 1st enemy row and 2nd column
+			var last = allEnemies.length - 1;
+			allEnemies[0].y = allEnemies[last].y = Board.enemyRows[0];
+			allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
+		});
+		
+		it('player, 2 enemies same row, 2nd enemy left edge = player right edge, hasCollided should return true');
+
+		it('player, 2 enemies same row, 2nd enemy within player left and right edge, hasCollided should return true');
+	});
 });
 
 describe('Enemy class', function () {

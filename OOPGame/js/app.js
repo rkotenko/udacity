@@ -73,6 +73,7 @@ Player.prototype.hasCollided = function () {
     // First, find all enemies in the array that are on the same row as player
     // Then, with all resulting enemies, check if the enemy's left and right edges are within the players left and right
     // edges. If so, collision has occurred, return true immediately
+    
 };
 
 // Rob Kotenko: reset the x and y of the player back to startLocation
