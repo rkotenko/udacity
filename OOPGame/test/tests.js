@@ -38,7 +38,18 @@ describe('Board class', function () {
 		it('should have a startLocation array', function () {
 			expect(Board.startLocation).to.be.an.array;
 		});
-		
+		it('should have a playerLeftPad property', function () {
+			expect(Board.playerLeftPad).to.exist;
+		});
+		it('should have a playerRightPad property', function () {
+			expect(Board.playerRightPad).to.exist;
+		});
+		it('should have a enemyRightPad property', function () {
+			expect(Board.enemyRightPad).to.exist;
+		});
+		it('should have a enemyLeftPad property', function () {
+			expect(Board.enemyLeftPad).to.exist;
+		});
 	})
 });
 
@@ -82,16 +93,22 @@ describe('Player class', function () {
 			expect(player.y).to.equal(Board.startLocation.row);
 		});
 		
-		it('leftPad and rightPad should be set to  16 and 84 respectively', function () {
-			expect(player.leftPad).to.equal(16);
-			expect(player.rightPad).to.equal(16);
+		it('innerLeft, innerRight should be set to x + playerLeftPad, image right edge - playerRightPad respectively', function () {
+			var rightEdge = player.x + Board.columnSize - 1;
+			expect(player.innerLeft).to.equal(player.x + Board.playerLeftPad);
+			expect(player.innerRight).to.equal(rightEdge - Board.playerRightPad);
 		});
 		
 		it('player.reset() should put the player character back to the startLocation values', function () {
 			// move the player off of the startLocation for testing.  start is (2, 5)
+			var rightEdge;
 			player.x = Board.columnSize * 3;
 			player.y = Board.rowSize * 3;
+			player.setInnerEdges();
 			player.reset();
+			rightEdge = player.x + Board.columnSize - 1;
+			expect(player.innerLeft).to.equal(player.x + Board.playerLeftPad); 
+			expect(player.innerRight).to.equal(rightEdge - Board.playerRightPad); 
 			expect(player.x).to.equal(Board.startLocation.column);
 			expect(player.y).to.equal(Board.startLocation.row);
 		});
@@ -156,8 +173,9 @@ describe('Player class', function () {
 			player.reset();
 			expect(player.hasCollided()).to.equal(false);
 		});
-		
-		describe('player and enemies in same row', function() {
+
+		// test with two enemies to make sure multiple enemies in row is handled correctly
+		describe('same row collision possibilities', function() {
 			var last = allEnemies.length - 1;
 			// before running these test, let's move the 1st, last enemy, and player to the 1st enemy row
 			before(function() {
@@ -165,57 +183,71 @@ describe('Player class', function () {
 				allEnemies[0].y = allEnemies[last].y = player.y = Board.enemyRows[0];
 			});
 			
-			// test with two enemies to make sure multiple enemies in row is handled correctly
-			it('player, 2 enemies same row, no enemies inside player innerLeft and innerRight, hasCollided should return false', function () {
+			it('player, 2 enemies, enemies not within (x + leftPad) and (x + (Board.columnSize - 1) - rightPad, return false', function () {
 				// put both enemies into the 2nd column
 				allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
 				
-				// move the player to 4th column
+				// move the player to 4th column, no chance of collision
 				player.x = 3 * Board.columnSize;
 				expect(player.hasCollided()).to.equal(false);
 			});
 		
-			it('player, 2 enemies same row, 2nd enemy right edge (minus padding) = player left edge (minus padding), hasCollided should return true', function () {
-				// put 1st enemy in 1st column, 2nd enemy in 3rd column + its padding and player padding, 
-				//and player in 4th column (2nd enemy x + padding and player x + padding will match) 
+			it('player, 2 enemies, enemy innerRight = player innerLeft, return true', function () {
 				allEnemies[0].x = 0 * Board.columnSize;
-				allEnemies[last].x = 2 * Board.columnSize + allEnemies[last].rightPad + player.leftPad;
+				allEnemies[last].x = (2 * Board.columnSize) + Board.playerLeftPad + Board.enemyRightPad + 1;
+				allEnemies[last].setInnerEdges();
 				player.x = 3 * Board.columnSize;
+				player.setInnerEdges();
 				expect(player.hasCollided()).to.equal(true);
 			});
 			
 			it('player, 2 enemies same row, 2nd enemy innerLeft = player innerRight, hasCollided should return true', function () {
-				// put 1st enemy in 1st column, 2nd enemy in 4th column, and player in 3rd column (2nd enemy left edge and player right will match) 
 				allEnemies[0].x = 0 * Board.columnSize;
-				allEnemies[last].x = 3 * Board.columnSize;
+				allEnemies[last].x = 3 * Board.columnSize - Board.enemyLeftPad - Board.playerRightPad - 1;
+				allEnemies[last].setInnerEdges();
 				player.x = 2 * Board.columnSize;
+				player.setInnerEdges();
 				expect(player.hasCollided()).to.equal(true);
 			});
 
 			it('player, 2 enemies same row, 2nd enemy right edge inside player left and right edge, hasCollided should return true', function () {
 				// put 1st enemy in 1st column, 2nd enemy in 3rd column + 10, and player in 4th column (2nd enemy right edge is inside player edges)
 				allEnemies[0].x = 0 * Board.columnSize;
-				allEnemies[last].x = (2 * Board.columnSize) + 10;
+				allEnemies[last].x = (2 * Board.columnSize) + Board.playerLeftPad + Board.enemyRightPad + 15;
+				allEnemies[last].setInnerEdges();
 				player.x = 3 * Board.columnSize;
+				player.setInnerEdges();
 				expect(player.hasCollided()).to.equal(true);
 			});
 			
 			it('player, 2 enemies same row, 2nd enemy left edge inside player right edge, hasCollided should return true', function () {
 				// put 1st enemy in 1st column, 2nd enemy in 4th column - 10, and player in 3rd column (2nd enemy left edge and player right will match) 
 				allEnemies[0].x = 0 * Board.columnSize;
-				allEnemies[last].x = (3 * Board.columnSize) - 1;
+				allEnemies[last].x = 3 * Board.columnSize - Board.enemyLeftPad - Board.playerRightPad - 15;
+				allEnemies[last].setInnerEdges();
 				player.x = 2 * Board.columnSize;
+				player.setInnerEdges();
 				expect(player.hasCollided()).to.equal(true);
 			});
 		});		
 	});
 	
 	describe('update', function() {
-		var collisionSpy = sinon.spy(player, 'hasCollided');
+		var collisionStub = sinon.stub(player, 'hasCollided'),
+			resetSpy = sinon.spy(player, 'reset');
+		
+		collisionStub.returns(true);
+		player.update();
 		
 		it('update should call hasCollided', function() {
-			expect(collisionSpy).called;
+			expect(collisionStub).called;
 		});
+		
+		it('if hasCollided is true, update should call reset', function () {
+			expect(resetSpy).called;
+		});
+		
+		collisionStub.restore();
 	});
 });
 
@@ -241,10 +273,11 @@ describe('Enemy class', function () {
 			expect(enemy.y).to.be.a('number');
 			expect(enemy.sprite).to.be.a('string');
 		});
-		
-		it('leftPad and rightPad should be 1 and 99 respectively', function() {
-			expect(enemy.leftPad).to.equal(1);
-			expect(enemy.rightPad).to.equal(2);
+
+		it('innerLeft, innerRight should be set to x + enemyLeftPad, image right edge - enemyRightPad respectively', function () {
+			var rightEdge = enemy.x + Board.columnSize - 1;
+			expect(enemy.innerLeft).to.equal(enemy.x + Board.enemyLeftPad);
+			expect(enemy.innerRight).to.equal(rightEdge - Board.enemyRightPad);
 		});
 		
 		// enemy.speed is a random number between enemy.minEnemySpeed and enemy.maxEnemySpeed.  It is directly set
@@ -255,7 +288,7 @@ describe('Enemy class', function () {
 			expect(enemy.speed).to.greaterThan(0);
 		});
 		
-		describe('getStartLocation - returns location array [x, y]', function () {
+		describe('setStartLocation', function () {
 			// stub out the random function so I can just the functions that use it instead of worrying about it itself
 			var randomStub = sinon.stub(enemy, 'randomInt');
 			
@@ -282,6 +315,15 @@ describe('Enemy class', function () {
 				expect(randomStub).called;
 				expect(enemy.x).to.equal(-2 * Board.columnSize);
 			});
+
+			it('innerLeft, innerRight should be set to x + enemyLeftPad, image right edge - enemyRightPad respectively', function () {
+				var rightEdge;
+				randomStub.returns(-2 * Board.columnSize);
+				enemy.setStartLocation();
+				rightEdge = enemy.x + Board.columnSize - 1;
+				expect(enemy.innerLeft).to.equal(enemy.x + Board.enemyLeftPad);
+				expect(enemy.innerRight).to.equal(rightEdge - Board.enemyRightPad);
+			});
 		});
 		
 	});
@@ -289,11 +331,19 @@ describe('Enemy class', function () {
 	describe('update', function () {
 		var startSpy = sinon.spy(enemy, 'setStartLocation'),
 			speedSpy = sinon.spy(enemy, 'setSpeed'),
+			setInnerEdgeSpy = sinon.spy(enemy, 'setInnerEdges');
 			dt = .035; // set the time delta (usually set by Date.now) to constant value
 		
 		beforeEach(function () {
 			startSpy.reset();
 			speedSpy.reset();	
+			setInnerEdgeSpy.reset();
+		});
+		
+		it('when update is called and not resetting, setInnerEdge should be called', function () {
+			enemy.x = 0;
+			enemy.update(dt);
+			expect(setInnerEdgeSpy).called;	
 		});
 		
 		it('if enemy.x = Board.width, setStartLocation and setSpeed should be called', function () {
@@ -316,5 +366,6 @@ describe('Enemy class', function () {
 			enemy.update(dt);
 			expect(enemy.x).to.equal(expected);
 		});	
+		
 	});
 });

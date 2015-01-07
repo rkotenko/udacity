@@ -13,7 +13,11 @@ var Board = {
     rowSize: 83,
     rowBuffer: 20, 
     minEnemySpeed: 75,
-    maxEnemySpeed: 300
+    maxEnemySpeed: 300,
+    playerLeftPad: 16,
+    playerRightPad: 16,
+    enemyLeftPad: 1,
+    enemyRightPad: 2
 };
 
 // 

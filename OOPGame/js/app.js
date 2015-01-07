@@ -10,16 +10,9 @@ var Character = function () {
         this.sprite = arguments[0];
     } 
 	
-	// leftPad and rightPad equal the number of pixels of white space on either side of the visible image.  Stored to allow more
-	// precise collision.  
-	if(this instanceof Enemy){
-		this.leftPad = 1;
-		this.rightPad = 2;
-	}
-	else if(this instanceof Player) {
-		this.leftPad = 16;
-		this.rightPad = 16;
-	}
+	// set up innerLeft and innerRight.  These are the values of the edges of the visual part of the images for 
+	// collision purposes 
+	this.setInnerEdges();
 };
 
 // the render function looks the same for enemies and players so put it in character
@@ -31,6 +24,19 @@ Character.prototype.render = function () {
 // including MDN
 Character.prototype.randomInt = function (min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
+};
+
+Character.prototype.setInnerEdges = function () {
+    // set up innerLeft and innerRight.  These are the values of the edges of the visual images 
+    if(this instanceof Enemy){
+        this.innerLeft = this.x + Board.enemyLeftPad;
+        this.innerRight = this.x + (Board.columnSize - 1) - Board.enemyRightPad;
+    }
+    else if(this instanceof Player) {
+        this.innerLeft = this.x + Board.playerLeftPad;
+        this.innerRight = this.x + (Board.columnSize - 1) - Board.playerRightPad;
+    }
+       
 };
 
 // Enemies our player must avoid
@@ -53,6 +59,7 @@ Enemy.prototype.update = function(dt) {
         this.setStartLocation()
     } else {
         this.x = Math.floor(this.x + (this.speed * dt));
+        this.setInnerEdges();
     }
 };
 
@@ -62,7 +69,7 @@ Enemy.prototype.update = function(dt) {
 Enemy.prototype.setStartLocation = function () {
     this.x = this.randomInt(-2 * Board.columnSize, -1 * Board.columnSize); // column -2 starts at -202, 1 starts at -101
     this.y = Board.enemyRows[this.randomInt(0, Board.enemyRows.length)]; // get random int from range of enemyRow array
-    return location;    
+    this.setInnerEdges();  
 };
 
 // set the enemy speed to a random choice between minEnemySpeed and maxEnemySpeed
@@ -147,23 +154,30 @@ Player.prototype.hasCollided = function () {
     // Then, with all resulting enemies, check if the enemy's left and right edges are within the players left and right
 	// edges. If so, collision has occurred, return true immediately as only one needs to be found
 	for(i = 0; i < enemiesInRow.length; i++) {
+	    // check if enemy innerRight within (inclusive) player innerLeft and innerRight
+	    if(enemiesInRow[i].innerRight >= player.innerLeft && enemiesInRow[i].innerRight <= player.innerRight) return true;	
 		
-		
+		// now check the enemy innerLeft
+        if(enemiesInRow[i].innerLeft <= player.innerRight && enemiesInRow[i].innerLeft >= player.innerLeft) return true;
 	}
 	
 	// got this far, so no collisions
-	
+	return false;
 };
 
 // Rob Kotenko: reset the x and y of the player back to startLocation
 Player.prototype.reset = function () {  
-    player.x = Board.startLocation.column;
-    player.y = Board.startLocation.row;
+    this.x = Board.startLocation.column;
+    this.y = Board.startLocation.row;
+    this.setInnerEdges();
 };
 
 // Rob Kotenko: since player location handled by handleInput, update should check for collision and reset if needed
 Player.prototype.update = function() {
+    //console.log('player update called');
+    
 	if(this.hasCollided()) {
+	    console.log('collision!');
 		this.reset();
 	}
 };
