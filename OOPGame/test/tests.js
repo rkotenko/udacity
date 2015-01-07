@@ -82,6 +82,11 @@ describe('Player class', function () {
 			expect(player.y).to.equal(Board.startLocation.row);
 		});
 		
+		it('leftPad and rightPad should be set to  16 and 84 respectively', function () {
+			expect(player.leftPad).to.equal(16);
+			expect(player.rightPad).to.equal(16);
+		});
+		
 		it('player.reset() should put the player character back to the startLocation values', function () {
 			// move the player off of the startLocation for testing.  start is (2, 5)
 			player.x = Board.columnSize * 3;
@@ -145,37 +150,72 @@ describe('Player class', function () {
 	});
 	
 	describe('hasCollided - player sprite edges are inclusive', function () {
-		function test() {}
 		// use the player and the enemies already created to run tests
 		it('when player and enemies on different rows, hasCollided returns false', function () {
 			// reset the player.  This will it in the right place for this test
 			player.reset();
 			expect(player.hasCollided()).to.equal(false);
 		});
-
-		// test with two enemies to make sure multiple enemies in row is handled correctly
-		it('player, 2 enemies same row, no enemies inside player left and right edge, hasCollided should return false', function () {
-			// move first and last enemy to the 1st enemy row and 2nd column
+		
+		describe('player and enemies in same row', function() {
 			var last = allEnemies.length - 1;
-			allEnemies[0].y = allEnemies[last].y = Board.enemyRows[0];
-			allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
+			// before running these test, let's move the 1st, last enemy, and player to the 1st enemy row
+			before(function() {
+				// move first, last enemy, player to the 1st enemy row
+				allEnemies[0].y = allEnemies[last].y = player.y = Board.enemyRows[0];
+			});
 			
-			// move the player to the enemy row, in the 4th column
-			player.y = Board.enemyRows[0];
-			player.x = 3 * Board.columnSize;
-			expect(player.hasCollided()).to.equal(false);
-		});
+			// test with two enemies to make sure multiple enemies in row is handled correctly
+			it('player, 2 enemies same row, no enemies inside player innerLeft and innerRight, hasCollided should return false', function () {
+				// put both enemies into the 2nd column
+				allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
+				
+				// move the player to 4th column
+				player.x = 3 * Board.columnSize;
+				expect(player.hasCollided()).to.equal(false);
+			});
 		
-		it('player, 2 enemies same row, 2nd enemy right edge = player left edge, hasCollided should return true', function () {
-			// move first and last enemy to the 1st enemy row and 2nd column
-			var last = allEnemies.length - 1;
-			allEnemies[0].y = allEnemies[last].y = Board.enemyRows[0];
-			allEnemies[0].x = allEnemies[last].x = 1 * Board.columnSize;
-		});
-		
-		it('player, 2 enemies same row, 2nd enemy left edge = player right edge, hasCollided should return true');
+			it('player, 2 enemies same row, 2nd enemy right edge (minus padding) = player left edge (minus padding), hasCollided should return true', function () {
+				// put 1st enemy in 1st column, 2nd enemy in 3rd column + its padding and player padding, 
+				//and player in 4th column (2nd enemy x + padding and player x + padding will match) 
+				allEnemies[0].x = 0 * Board.columnSize;
+				allEnemies[last].x = 2 * Board.columnSize + allEnemies[last].rightPad + player.leftPad;
+				player.x = 3 * Board.columnSize;
+				expect(player.hasCollided()).to.equal(true);
+			});
+			
+			it('player, 2 enemies same row, 2nd enemy innerLeft = player innerRight, hasCollided should return true', function () {
+				// put 1st enemy in 1st column, 2nd enemy in 4th column, and player in 3rd column (2nd enemy left edge and player right will match) 
+				allEnemies[0].x = 0 * Board.columnSize;
+				allEnemies[last].x = 3 * Board.columnSize;
+				player.x = 2 * Board.columnSize;
+				expect(player.hasCollided()).to.equal(true);
+			});
 
-		it('player, 2 enemies same row, 2nd enemy within player left and right edge, hasCollided should return true');
+			it('player, 2 enemies same row, 2nd enemy right edge inside player left and right edge, hasCollided should return true', function () {
+				// put 1st enemy in 1st column, 2nd enemy in 3rd column + 10, and player in 4th column (2nd enemy right edge is inside player edges)
+				allEnemies[0].x = 0 * Board.columnSize;
+				allEnemies[last].x = (2 * Board.columnSize) + 10;
+				player.x = 3 * Board.columnSize;
+				expect(player.hasCollided()).to.equal(true);
+			});
+			
+			it('player, 2 enemies same row, 2nd enemy left edge inside player right edge, hasCollided should return true', function () {
+				// put 1st enemy in 1st column, 2nd enemy in 4th column - 10, and player in 3rd column (2nd enemy left edge and player right will match) 
+				allEnemies[0].x = 0 * Board.columnSize;
+				allEnemies[last].x = (3 * Board.columnSize) - 1;
+				player.x = 2 * Board.columnSize;
+				expect(player.hasCollided()).to.equal(true);
+			});
+		});		
+	});
+	
+	describe('update', function() {
+		var collisionSpy = sinon.spy(player, 'hasCollided');
+		
+		it('update should call hasCollided', function() {
+			expect(collisionSpy).called;
+		});
 	});
 });
 
@@ -189,22 +229,22 @@ describe('Enemy class', function () {
 	it('setSpeed should exist', function () {
 		expect(enemy.setSpeed).to.exist();
 	});
-	
-	it('x and y should be numbers and sprite should be a string', function () {
-		expect(enemy.x).to.be.a('number');
-		expect(enemy.y).to.be.a('number');
-		expect(enemy.sprite).to.be.a('string');
-	});
-	
+		
 	describe('Enemy initialization', function () {
 		
 		it('enemy should be an instance of Character', function () {
 			expect(enemy).to.be.instanceOf(Character);
 		});
 		
-		it('x and y values should be set', function () {
-			expect(enemy.x).to.exist();
-			expect(enemy.y).to.exist();	
+		it('x and y should be numbers and sprite should be a string', function () {
+			expect(enemy.x).to.be.a('number');
+			expect(enemy.y).to.be.a('number');
+			expect(enemy.sprite).to.be.a('string');
+		});
+		
+		it('leftPad and rightPad should be 1 and 99 respectively', function() {
+			expect(enemy.leftPad).to.equal(1);
+			expect(enemy.rightPad).to.equal(2);
 		});
 		
 		// enemy.speed is a random number between enemy.minEnemySpeed and enemy.maxEnemySpeed.  It is directly set

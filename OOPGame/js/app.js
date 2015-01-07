@@ -9,6 +9,17 @@ var Character = function () {
     } else {
         this.sprite = arguments[0];
     } 
+	
+	// leftPad and rightPad equal the number of pixels of white space on either side of the visible image.  Stored to allow more
+	// precise collision.  
+	if(this instanceof Enemy){
+		this.leftPad = 1;
+		this.rightPad = 2;
+	}
+	else if(this instanceof Player) {
+		this.leftPad = 16;
+		this.rightPad = 16;
+	}
 };
 
 // the render function looks the same for enemies and players so put it in character
@@ -16,8 +27,8 @@ Character.prototype.render = function () {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);    
 };
 
-// Rob Kotenko: a random int function.  This is the standard function found in many locations on the web, including
-// MDN
+// Rob Kotenko: a random int function.  This is the standard function found in many locations on the web, 
+// including MDN
 Character.prototype.randomInt = function (min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 };
@@ -26,6 +37,7 @@ Character.prototype.randomInt = function (min, max) {
 var Enemy = function() {
     var location = this.setStartLocation();
     Character.call(this, 'images/enemy-bug.png');
+	
     this.setSpeed();
 };
 
@@ -68,18 +80,17 @@ var Player = function() {
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
 
-// Check to see if the player has collided with an enemy.  Return true if so, false if not
-Player.prototype.hasCollided = function () {
-    // First, find all enemies in the array that are on the same row as player
-    // Then, with all resulting enemies, check if the enemy's left and right edges are within the players left and right
-    // edges. If so, collision has occurred, return true immediately
-    
-};
-
-// Rob Kotenko: reset the x and y of the player back to startLocation
-Player.prototype.reset = function () {  
-    player.x = Board.startLocation.column;
-    player.y = Board.startLocation.row;
+// Rob Kotenko: determinePixels takes a type, row or column and converts the simple number
+// to the proper number of pixels for where the player sprite should be drawn
+// a helper function really so I can think in column and row numbers instead of pixels
+// and I can store the sizes for each in Board
+Player.prototype.determinePixels = function (type, value) {
+    switch(type) {
+        case 'row':
+            return value * Board.rowSize;
+        case 'column':
+            return value * Board.columnSize;
+    }
 };
 
 // Converts the user input into the proper x and y values
@@ -112,17 +123,49 @@ Player.prototype.handleInput = function(direction) {
     
 };
 
-// Rob Kotenko: determinePixels takes a type, row or column and converts the simple number
-// to the proper number of pixels for where the player sprite should be drawn
-// a helper function really so I can think in column and row numbers instead of pixels
-// and I can store the sizes for each in Board
-Player.prototype.determinePixels = function (type, value) {
-    switch(type) {
-        case 'row':
-            return value * Board.rowSize;
-        case 'column':
-            return value * Board.columnSize;
-    }
+// Check to see if the player has collided with an enemy.  Return true if so, false if not
+// Two step process to cut down on unneeded processing for enemies with no chance to have collision
+//    Find enemies in same row as player.  With these, check overlap
+Player.prototype.hasCollided = function () {
+    var enemiesInRow = [],
+		sameRow = false,
+		playerSprite = {
+			left: player.x,
+			right: player.x + Board.columnSize
+		};
+		
+	// First, find all enemies in the array that are on the same row as player.  If none exist, return false
+	for(var i = 0; i < allEnemies.length; i++) {
+		if (player.y == allEnemies[i].y) {
+			enemiesInRow.push(allEnemies[i]);
+			sameRow = true;
+		}
+	}
+	
+	if(!sameRow) return false;
+	
+    // Then, with all resulting enemies, check if the enemy's left and right edges are within the players left and right
+	// edges. If so, collision has occurred, return true immediately as only one needs to be found
+	for(i = 0; i < enemiesInRow.length; i++) {
+		
+		
+	}
+	
+	// got this far, so no collisions
+	
+};
+
+// Rob Kotenko: reset the x and y of the player back to startLocation
+Player.prototype.reset = function () {  
+    player.x = Board.startLocation.column;
+    player.y = Board.startLocation.row;
+};
+
+// Rob Kotenko: since player location handled by handleInput, update should check for collision and reset if needed
+Player.prototype.update = function() {
+	if(this.hasCollided()) {
+		this.reset();
+	}
 };
 
 // Now instantiate your objects.
